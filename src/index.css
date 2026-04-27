@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-charcoal: #121212;
+  --color-safety-orange: #FF8C00;
+  --color-alert-red: #FF0000;
+  --color-tactical-gray: #1E1E1E;
+  --color-tactical-border: #333333;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-[#0A0A0A] text-white font-sans antialiased;
+  }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #121212 !important;
+}
+
+.leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red-border {
+  0% { border-color: #FF0033; box-shadow: 0 0 10px rgba(255, 0, 51, 0.5); }
+  50% { border-color: #FF5577; box-shadow: 0 0 30px rgba(255, 0, 51, 0.8); }
+  100% { border-color: #FF0033; box-shadow: 0 0 10px rgba(255, 0, 51, 0.5); }
+}
+
+.animate-pulse-red-border {
+  animation: pulse-red-border 1.5s infinite;
+}
+

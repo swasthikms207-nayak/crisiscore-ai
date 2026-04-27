@@ -1,0 +1,14 @@
+{
+  "name": "CrisisCore AI",
+  "description": "Tactical emergency response platform with AI-driven priority scoring and real-time mission control for disaster response.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "AI Priority Scoring",
+    "Real-time SOS Tracking",
+    "Rescuer Mission Control"
+  ],
+  "C7": [],
+  "aq": []
+}

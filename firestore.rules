@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE HELPERS ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // --- VALIDATION BLUEPRINTS ---
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'role', 'name', 'email'])
+        && data.uid == request.auth.uid
+        && data.name is string && data.name.size() <= 100
+        && data.email is string && data.email.size() <= 200
+        && data.role in ['VICTIM', 'RESCUER']
+        && (data.get('victimProfile', null) == null || data.victimProfile is map)
+        && (data.get('rescuerProfile', null) == null || data.rescuerProfile is map);
+    }
+
+    function isValidAlert(data) {
+      return data.keys().hasAll(['victimUid', 'location', 'status', 'disasterType'])
+        && data.victimUid == request.auth.uid
+        && data.status in ['PENDING', 'ACTIVE', 'EN_ROUTE', 'RESOLVED']
+        && data.disasterType is string && data.disasterType.size() <= 50
+        && data.location.lat is number && data.location.lng is number;
+    }
+
+    // --- COLLECTION RULES ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Users cannot be listed for security
+      
+      allow create: if isOwner(userId) && isValidUser(incoming())
+        && incoming().createdAt == request.time;
+      
+      allow update: if isOwner(userId) && isValidUser(incoming())
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && (
+          // Action: Profile Update
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'victimProfile', 'rescuerProfile', 'victimSetupComplete', 
+            'rescuerSetupComplete', 'name', 'updatedAt', 'role', 'setupComplete'
+          ])
+        ) && incoming().updatedAt == request.time;
+    }
+
+    match /alerts/{alertId} {
+      // List/Get: Victims see their own, Rescuers see all active
+      allow list: if isSignedIn() && (
+        resource.data.victimUid == request.auth.uid 
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'RESCUER'
+      );
+      
+      allow get: if isSignedIn() && (
+        resource.data.victimUid == request.auth.uid 
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'RESCUER'
+      );
+
+      allow create: if isSignedIn() && isValidId(alertId) && isValidAlert(incoming())
+        && incoming().createdAt == request.time;
+
+      allow update: if isSignedIn() && isValidAlert(incoming())
+        && (
+          // Action: Victim Update (before resolution)
+          (existing().victimUid == request.auth.uid && existing().status != 'RESOLVED' && 
+           incoming().diff(existing()).affectedKeys().hasOnly(['description', 'location', 'updatedAt', 'disasterType', 'peopleCount']))
+          ||
+          // Action: Rescuer Response
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'RESCUER' && 
+           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'assignedRescuerId', 'updatedAt', 'aiResponse']))
+        ) && incoming().updatedAt == request.time;
+
+      allow delete: if false; // Tactical logs are permanent
+    }
+  }
+}

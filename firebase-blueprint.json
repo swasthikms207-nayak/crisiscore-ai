@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Cross-role user profile system for CrisisCore.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["USER", "RESCUER"] },
+        "victimSetupComplete": { "type": "boolean" },
+        "rescuerSetupComplete": { "type": "boolean" },
+        "victimProfile": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "age": { "type": "string" },
+            "bloodType": { "type": "string" },
+            "emergencyNumber": { "type": "string" },
+            "medicalConditions": { "type": "string" }
+          }
+        },
+        "rescuerProfile": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "age": { "type": "string" },
+            "phoneNumber": { "type": "string" },
+            "speciality": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "role"]
+    },
+    "Alert": {
+      "title": "Emergency Alert",
+      "description": "Tactical SOS signal broadcasted by victims and monitored by rescuers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "victimUid": { "type": "string" },
+        "victimName": { "type": "string" },
+        "victimAge": { "type": "number" },
+        "emergencyContact": { "type": "string" },
+        "disasterType": { "type": "string" },
+        "peopleCount": { "type": "number" },
+        "riskLevel": { "type": "string", "enum": ["High", "Medium", "Low", "CRITICAL"] },
+        "description": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "status": { "type": "string", "enum": ["PENDING", "ACTIVE", "EN_ROUTE", "RESOLVED"] },
+        "assignedRescuerId": { "type": "string" },
+        "priorityScore": { "type": "number" },
+        "aiResponse": {
+          "type": "object",
+          "properties": {
+            "eta": { "type": "string" },
+            "guidance": { "type": "array", "items": { "type": "string" } },
+            "status_message": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["victimUid", "location", "status", "disasterType"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User mission profiles"
+    },
+    "/alerts/{alertId}": {
+      "schema": "Alert",
+      "description": "Tactical SOS signals"
+    }
+  }
+}
